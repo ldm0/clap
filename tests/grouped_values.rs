@@ -1,6 +1,6 @@
 mod utils;
 
-use clap::{App, AppSettings, Arg};
+use clap::{App, AppSettings, Arg, ErrorKind};
 
 #[test]
 fn value_sets_works() {
@@ -187,4 +187,110 @@ fn issue_2171() {
     for argv in test_args {
         let _ = schema.clone().try_get_matches_from(argv).unwrap();
     }
+}
+
+#[test]
+fn grouped_min_values_test() {
+    let m = App::new("myapp")
+        .arg(
+            Arg::new("option")
+                .short('o')
+                .takes_value(true)
+                .use_delimiter(true)
+                .multiple(true)
+                .grouped_min_values(1),
+        )
+        .get_matches_from(vec!["myapp", "-o=foo", "-o=val1,val2,val3", "-o=bar"]);
+    let grouped_vals: Vec<_> = m.grouped_values_of("option").unwrap().collect();
+    assert_eq!(
+        grouped_vals,
+        vec![vec!["foo"], vec!["val1", "val2", "val3"], vec!["bar"]]
+    );
+}
+
+#[test]
+fn grouped_max_values_test() {
+    let m = App::new("myapp")
+        .arg(
+            Arg::new("option")
+                .short('o')
+                .takes_value(true)
+                .use_delimiter(true)
+                .multiple(true)
+                .grouped_max_values(3),
+        )
+        .get_matches_from(vec!["myapp", "-o=foo", "-o=val1,val2,val3", "-o=bar"]);
+    let grouped_vals: Vec<_> = m.grouped_values_of("option").unwrap().collect();
+    assert_eq!(
+        grouped_vals,
+        vec![vec!["foo"], vec!["val1", "val2", "val3"], vec!["bar"]]
+    );
+}
+
+#[test]
+fn grouped_min_values_failed() {
+    static MIN_VALS_FAILED: &str =
+        "error: The argument '-o <option>...' requires at least 2 values, but only 1 was provided
+
+USAGE:
+    myapp [OPTIONS]
+
+For more information try --help";
+    let app = App::new("myapp").arg(
+        Arg::new("option")
+            .short('o')
+            .takes_value(true)
+            .use_delimiter(true)
+            .multiple(true)
+            .grouped_min_values(2),
+    );
+
+    utils::compare_output(
+        app,
+        "myapp -o=foo -o=val1,val2,val3 -o=bar",
+        MIN_VALS_FAILED,
+        true,
+    );
+}
+
+#[test]
+fn grouped_max_values_failed() {
+    static MAX_VALS_FAILED: &str =
+        "error: The value 'bar' was provided to '-o <option>...' but it wasn't expecting any more values
+
+USAGE:
+    myapp [OPTIONS]
+
+For more information try --help";
+    let app = App::new("myapp").arg(
+        Arg::new("option")
+            .short('o')
+            .takes_value(true)
+            .use_delimiter(true)
+            .multiple(true)
+            .grouped_max_values(2),
+    );
+
+    utils::compare_output(
+        app,
+        "myapp -o=foo -o=val1,val2,val3 -o=bar",
+        MAX_VALS_FAILED,
+        true,
+    );
+}
+
+#[test]
+fn issue_2229() {
+    let m = App::new("multiple_values")
+        .arg(
+            Arg::new("pos")
+                .about("multiple positionals")
+                .number_of_values(3),
+        )
+        .try_get_matches_from(vec![
+            "myprog", "val1", "val2", "val3", "val4", "val5", "val6",
+        ]);
+
+    assert!(m.is_err());
+    assert_eq!(m.unwrap_err().kind, ErrorKind::WrongNumberOfValues);
 }

@@ -89,6 +89,9 @@ pub struct Arg<'help> {
     pub(crate) num_vals: Option<u64>,
     pub(crate) max_vals: Option<u64>,
     pub(crate) min_vals: Option<u64>,
+    pub(crate) grouped_num_vals: Option<u64>,
+    pub(crate) grouped_max_vals: Option<u64>,
+    pub(crate) grouped_min_vals: Option<u64>,
     pub(crate) validator: Option<Arc<Mutex<Validator<'help>>>>,
     pub(crate) validator_os: Option<Arc<Mutex<ValidatorOs<'help>>>>,
     pub(crate) val_delim: Option<char>,
@@ -1851,6 +1854,13 @@ impl<'help> Arg<'help> {
         self.takes_value(true)
     }
 
+    /// Placeholder documentation
+    #[inline]
+    pub fn grouped_number_of_values(mut self, qty: u64) -> Self {
+        self.grouped_num_vals = Some(qty);
+        self.takes_value(true)
+    }
+
     /// Allows one to perform a custom validation on the argument value. You provide a closure
     /// which accepts a [`String`] value, and return a [`Result`] where the [`Err(String)`] is a
     /// message displayed to the user.
@@ -2073,6 +2083,13 @@ impl<'help> Arg<'help> {
         self.takes_value(true).multiple_values(true)
     }
 
+    /// placeholder documentation
+    #[inline]
+    pub fn grouped_max_values(mut self, qty: u64) -> Self {
+        self.grouped_max_vals = Some(qty);
+        self.takes_value(true).multiple_values(true)
+    }
+
     /// Specifies the *minimum* number of values for this argument. For example, if you had a
     /// `-f <file>` argument where you wanted at least 2 'files' you would set
     /// `.min_values(2)`, and this argument would be satisfied if the user provided, 2 or more
@@ -2133,6 +2150,13 @@ impl<'help> Arg<'help> {
     #[inline]
     pub fn min_values(mut self, qty: u64) -> Self {
         self.min_vals = Some(qty);
+        self.takes_value(true)
+    }
+
+    /// placeholder documentation
+    #[inline]
+    pub fn grouped_min_values(mut self, qty: u64) -> Self {
+        self.grouped_min_vals = Some(qty);
         self.takes_value(true)
     }
 

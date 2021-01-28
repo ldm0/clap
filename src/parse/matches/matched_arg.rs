@@ -85,6 +85,14 @@ impl MatchedArg {
         self.vals.last().map(|x| x.len()).unwrap_or(0)
     }
 
+    pub(crate) fn min_num_vals_group(&self) -> usize {
+        self.vals.iter().map(|x| x.len()).min().unwrap_or(0)
+    }
+
+    pub(crate) fn max_num_vals_group(&self) -> usize {
+        self.vals.iter().map(|x| x.len()).max().unwrap_or(0)
+    }
+
     pub(crate) fn no_val(&self) -> bool {
         self.vals.iter().flatten().count() == 0
     }

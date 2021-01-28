@@ -944,7 +944,7 @@ fn aaos_opts_mult() {
         .setting(AppSettings::AllArgsOverrideSelf)
         .arg(
             Arg::from("--opt [val]... 'some option'")
-                .number_of_values(1)
+                .grouped_min_values(1)
                 .require_delimiter(true),
         )
         .try_get_matches_from(vec!["", "--opt=some", "--opt=other", "--opt=one,two"]);

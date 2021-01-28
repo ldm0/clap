@@ -130,7 +130,7 @@ fn option_exact_exact_mult() {
                 .about("multiple options")
                 .takes_value(true)
                 .multiple(true)
-                .number_of_values(3),
+                .grouped_number_of_values(3),
         )
         .try_get_matches_from(vec![
             "", "-o", "val1", "val2", "val3", "-o", "val4", "val5", "val6",

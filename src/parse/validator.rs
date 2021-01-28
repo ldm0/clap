@@ -442,30 +442,74 @@ impl<'help, 'app, 'parser> Validator<'help, 'app, 'parser> {
     fn validate_arg_num_vals(&self, a: &Arg, ma: &MatchedArg) -> ClapResult<()> {
         debug!("Validator::validate_arg_num_vals");
         if let Some(num) = a.num_vals {
+            let num_vals = ma.num_vals() as u64;
             debug!("Validator::validate_arg_num_vals: num_vals set...{}", num);
-            let should_err = if a.is_set(ArgSettings::MultipleValues) {
-                ((ma.num_vals() as u64) % num) != 0
+            let incorrect_num = if num_vals != num {
+                Some(num_vals)
             } else {
-                num != (ma.num_vals() as u64)
+                None
             };
-            if should_err {
+            if let Some(incorrect_num) = incorrect_num {
                 debug!("Validator::validate_arg_num_vals: Sending error WrongNumberOfValues");
                 return Err(Error::wrong_number_of_values(
                     a,
                     num,
-                    if a.is_set(ArgSettings::MultipleValues) {
-                        ma.num_vals() % num as usize
-                    } else {
-                        ma.num_vals()
-                    },
+                    incorrect_num as usize,
+                    Usage::new(self.p).create_usage_with_title(&[]),
+                    self.p.app.color(),
+                ));
+            }
+        }
+        if let Some(num) = a.grouped_num_vals {
+            let max_num_vals = ma.max_num_vals_group() as u64;
+            let min_num_vals = ma.min_num_vals_group() as u64;
+            debug!(
+                "Validator::validate_arg_num_vals: grouped_num_vals set...{}",
+                num
+            );
+            let incorrect_num = if max_num_vals != num {
+                Some(max_num_vals)
+            } else if min_num_vals != num {
+                Some(min_num_vals)
+            } else {
+                None
+            };
+            if let Some(incorrect_num) = incorrect_num {
+                debug!("Validator::validate_arg_num_vals: Sending error WrongNumberOfValues");
+                return Err(Error::wrong_number_of_values(
+                    a,
+                    num,
+                    incorrect_num as usize,
                     Usage::new(self.p).create_usage_with_title(&[]),
                     self.p.app.color(),
                 ));
             }
         }
         if let Some(num) = a.max_vals {
+            let num_vals = ma.num_vals() as u64;
             debug!("Validator::validate_arg_num_vals: max_vals set...{}", num);
-            if (ma.num_vals() as u64) > num {
+            if num_vals > num {
+                debug!("Validator::validate_arg_num_vals: Sending error TooManyValues");
+                return Err(Error::too_many_values(
+                    ma.vals_flatten()
+                        .last()
+                        .expect(INTERNAL_ERROR_MSG)
+                        .to_str()
+                        .expect(INVALID_UTF8)
+                        .to_string(),
+                    a,
+                    Usage::new(self.p).create_usage_with_title(&[]),
+                    self.p.app.color(),
+                ));
+            }
+        }
+        if let Some(num) = a.grouped_max_vals {
+            let max_num_vals = ma.max_num_vals_group() as u64;
+            debug!(
+                "Validator::validate_arg_num_vals: grouped_max_vals set...{}",
+                num
+            );
+            if max_num_vals > num {
                 debug!("Validator::validate_arg_num_vals: Sending error TooManyValues");
                 return Err(Error::too_many_values(
                     ma.vals_flatten()
@@ -481,13 +525,14 @@ impl<'help, 'app, 'parser> Validator<'help, 'app, 'parser> {
             }
         }
         let min_vals_zero = if let Some(num) = a.min_vals {
+            let num_vals = ma.num_vals() as u64;
             debug!("Validator::validate_arg_num_vals: min_vals set: {}", num);
-            if (ma.num_vals() as u64) < num && num != 0 {
+            if num_vals < num && num != 0 {
                 debug!("Validator::validate_arg_num_vals: Sending error TooFewValues");
                 return Err(Error::too_few_values(
                     a,
                     num,
-                    ma.num_vals(),
+                    num_vals as usize,
                     Usage::new(self.p).create_usage_with_title(&[]),
                     self.p.app.color(),
                 ));
@@ -496,6 +541,23 @@ impl<'help, 'app, 'parser> Validator<'help, 'app, 'parser> {
         } else {
             false
         };
+        if let Some(num) = a.grouped_min_vals {
+            let min_num_vals = ma.min_num_vals_group() as u64;
+            debug!(
+                "Validator::validate_arg_num_vals: grouped_min_vals set: {}",
+                num
+            );
+            if min_num_vals < num {
+                debug!("Validator::validate_arg_num_vals: Sending error TooFewValues");
+                return Err(Error::too_few_values(
+                    a,
+                    num,
+                    min_num_vals as usize,
+                    Usage::new(self.p).create_usage_with_title(&[]),
+                    self.p.app.color(),
+                ));
+            }
+        }
         // Issue 665 (https://github.com/kbknapp/clap-rs/issues/665)
         // Issue 1105 (https://github.com/kbknapp/clap-rs/issues/1105)
         if a.is_set(ArgSettings::TakesValue) && !min_vals_zero && ma.no_val() {
