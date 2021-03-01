@@ -813,23 +813,26 @@ impl<'help, 'app> Parser<'help, 'app> {
     fn is_new_arg(&self, arg_os: &ArgStr, last_result: &ParseResult) -> bool {
         debug!("Parser::is_new_arg: {:?}:{:?}", arg_os, last_result);
 
-        let want_value = match last_result {
+        match last_result {
             ParseResult::Opt(name) | ParseResult::Pos(name) => {
-                self.is_set(AS::AllowLeadingHyphen)
+                // Is previously parser met a opt or successfully accepts a positional argument.
+                // Let's check if the arg_os can be seen as a value undoubtedly.
+                if self.is_set(AS::AllowLeadingHyphen)
                     || self.app[name].is_set(ArgSettings::AllowHyphenValues)
                     || (self.is_set(AS::AllowNegativeNumbers)
                         && arg_os.to_string_lossy().parse::<f64>().is_ok())
+                {
+                    return false;
+                }
             }
             ParseResult::ValuesDone => return true,
-            _ => false,
+            _ => {}
         };
 
         debug!("Parser::is_new_arg: want_value={:?}", want_value);
 
         // Is this a new argument, or values from a previous option?
-        if want_value {
-            false
-        } else if arg_os.starts_with("--") {
+        if arg_os.starts_with("--") {
             debug!("Parser::is_new_arg: -- found");
             true
         } else if arg_os.starts_with("-") {
