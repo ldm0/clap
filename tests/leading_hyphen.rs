@@ -216,3 +216,107 @@ fn multiple_vals_with_hyphen() {
     assert_eq!(&cmds, &["find", "-type", "f", "-name", "special"]);
     assert_eq!(m.value_of("location"), Some("/home/clap"));
 }
+
+#[test]
+fn allow_leading_hyphen_positional() {
+    static COPY_ABOUT: &str = "Copy mode accepts two parts of arguments <from> and <to>,\
+the two parts are separated by [--]. <from> is the exact as Consumer\
+ mode, and <to> is the exact as Producer mode.";
+
+    let res = App::new("copy")
+        .setting(AppSettings::AllowLeadingHyphen)
+        .arg(
+            Arg::new("from")
+                .takes_value(true)
+                .multiple(true)
+                .required(true),
+        )
+        .arg(
+            Arg::new("to")
+                .takes_value(true)
+                .multiple(true)
+                .last(true)
+                .required(true),
+        )
+        .about(COPY_ABOUT)
+        .try_get_matches_from(&[
+            "copy",
+            "-b",
+            "localhost",
+            "-t",
+            "topic1",
+            "--foo",
+            "bar",
+            "-e",
+            "--",
+            "-b",
+            "localhost",
+            "-t",
+            "topic2",
+            "--foo",
+            "bar",
+        ]);
+    assert!(res.is_ok(), "Error: {:?}", res.unwrap_err().kind);
+    let m = res.unwrap();
+    assert_eq!(
+        m.values_of("from").unwrap().collect::<Vec<_>>(),
+        vec!["-b", "localhost", "-t", "topic1", "--foo", "bar", "-e",]
+    );
+    assert_eq!(
+        m.values_of("to").unwrap().collect::<Vec<_>>(),
+        vec!["-b", "localhost", "-t", "topic2", "--foo", "bar"]
+    );
+}
+
+#[test]
+fn allow_hyphen_values_positional() {
+    // Should have the same effect with `allow_hyphen_values_positional()`;
+    static COPY_ABOUT: &str = "Copy mode accepts two parts of arguments <from> and <to>,\
+the two parts are separated by [--]. <from> is the exact as Consumer\
+ mode, and <to> is the exact as Producer mode.";
+
+    let res = App::new("copy")
+        .arg(
+            Arg::new("from")
+                .takes_value(true)
+                .multiple(true)
+                .setting(ArgSettings::AllowHyphenValues)
+                .required(true),
+        )
+        .arg(
+            Arg::new("to")
+                .takes_value(true)
+                .multiple(true)
+                .last(true)
+                .setting(ArgSettings::AllowHyphenValues)
+                .required(true),
+        )
+        .about(COPY_ABOUT)
+        .try_get_matches_from(&[
+            "copy",
+            "-b",
+            "localhost",
+            "-t",
+            "topic1",
+            "--foo",
+            "bar",
+            "-e",
+            "--",
+            "-b",
+            "localhost",
+            "-t",
+            "topic2",
+            "--foo",
+            "bar",
+        ]);
+    assert!(res.is_ok(), "Error: {:?}", res.unwrap_err().kind);
+    let m = res.unwrap();
+    assert_eq!(
+        m.values_of("from").unwrap().collect::<Vec<_>>(),
+        vec!["-b", "localhost", "-t", "topic1", "--foo", "bar", "-e",]
+    );
+    assert_eq!(
+        m.values_of("to").unwrap().collect::<Vec<_>>(),
+        vec!["-b", "localhost", "-t", "topic2", "--foo", "bar"]
+    );
+}
