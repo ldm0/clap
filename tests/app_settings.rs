@@ -453,86 +453,6 @@ fn delim_values_trailingvararg_with_delim() {
 }
 
 #[test]
-fn leading_hyphen_short() {
-    let res = App::new("leadhy")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .arg(Arg::new("some"))
-        .arg(Arg::new("other").short('o'))
-        .try_get_matches_from(vec!["", "-bar", "-o"]);
-    assert!(res.is_ok(), "Error: {:?}", res.unwrap_err().kind);
-    let m = res.unwrap();
-    assert!(m.is_present("some"));
-    assert!(m.is_present("other"));
-    assert_eq!(m.value_of("some").unwrap(), "-bar");
-}
-
-#[test]
-fn leading_hyphen_long() {
-    let res = App::new("leadhy")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .arg(Arg::new("some"))
-        .arg(Arg::new("other").short('o'))
-        .try_get_matches_from(vec!["", "--bar", "-o"]);
-    assert!(res.is_ok(), "Error: {:?}", res.unwrap_err().kind);
-    let m = res.unwrap();
-    assert!(m.is_present("some"));
-    assert!(m.is_present("other"));
-    assert_eq!(m.value_of("some").unwrap(), "--bar");
-}
-
-#[test]
-fn leading_hyphen_opt() {
-    let res = App::new("leadhy")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .arg(Arg::new("some").takes_value(true).long("opt"))
-        .arg(Arg::new("other").short('o'))
-        .try_get_matches_from(vec!["", "--opt", "--bar", "-o"]);
-    assert!(res.is_ok(), "Error: {:?}", res.unwrap_err().kind);
-    let m = res.unwrap();
-    assert!(m.is_present("some"));
-    assert!(m.is_present("other"));
-    assert_eq!(m.value_of("some").unwrap(), "--bar");
-}
-
-#[test]
-fn allow_negative_numbers() {
-    let res = App::new("negnum")
-        .setting(AppSettings::AllowNegativeNumbers)
-        .arg(Arg::new("panum"))
-        .arg(Arg::new("onum").short('o').takes_value(true))
-        .try_get_matches_from(vec!["negnum", "-20", "-o", "-1.2"]);
-    assert!(res.is_ok(), "Error: {:?}", res.unwrap_err().kind);
-    let m = res.unwrap();
-    assert_eq!(m.value_of("panum").unwrap(), "-20");
-    assert_eq!(m.value_of("onum").unwrap(), "-1.2");
-}
-
-#[test]
-fn allow_negative_numbers_fail() {
-    let res = App::new("negnum")
-        .setting(AppSettings::AllowNegativeNumbers)
-        .arg(Arg::new("panum"))
-        .arg(Arg::new("onum").short('o').takes_value(true))
-        .try_get_matches_from(vec!["negnum", "--foo", "-o", "-1.2"]);
-    assert!(res.is_err());
-    assert_eq!(res.unwrap_err().kind, ErrorKind::UnknownArgument)
-}
-
-#[test]
-fn leading_double_hyphen_trailingvararg() {
-    let m = App::new("positional")
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::AllowLeadingHyphen)
-        .arg(Arg::from("[opt]... 'some pos'"))
-        .get_matches_from(vec!["", "--foo", "-Wl", "bar"]);
-    assert!(m.is_present("opt"));
-    assert_eq!(
-        m.values_of("opt").unwrap().collect::<Vec<_>>(),
-        &["--foo", "-Wl", "bar"]
-    );
-}
-
-#[test]
 fn unset_setting() {
     let m = App::new("unset_setting").setting(AppSettings::AllArgsOverrideSelf);
     assert!(m.is_set(AppSettings::AllArgsOverrideSelf));
@@ -758,38 +678,6 @@ fn missing_positional_hyphen_req_error() {
     assert_eq!(r.unwrap_err().kind, ErrorKind::MissingRequiredArgument);
 }
 
-#[test]
-fn issue_1066_allow_leading_hyphen_and_unknown_args() {
-    let res = App::new("prog")
-        .global_setting(AppSettings::AllowLeadingHyphen)
-        .arg(Arg::from("--some-argument"))
-        .try_get_matches_from(vec!["prog", "hello"]);
-
-    assert!(res.is_err());
-    assert_eq!(res.unwrap_err().kind, ErrorKind::UnknownArgument);
-}
-
-#[test]
-fn issue_1066_allow_leading_hyphen_and_unknown_args_no_vals() {
-    let res = App::new("prog")
-        .global_setting(AppSettings::AllowLeadingHyphen)
-        .arg(Arg::from("--some-argument"))
-        .try_get_matches_from(vec!["prog", "--hello"]);
-
-    assert!(res.is_err());
-    assert_eq!(res.unwrap_err().kind, ErrorKind::UnknownArgument);
-}
-
-#[test]
-fn issue_1066_allow_leading_hyphen_and_unknown_args_option() {
-    let res = App::new("prog")
-        .global_setting(AppSettings::AllowLeadingHyphen)
-        .arg(Arg::from("--some-argument=[val]"))
-        .try_get_matches_from(vec!["prog", "-hello"]);
-
-    assert!(res.is_err());
-    assert_eq!(res.unwrap_err().kind, ErrorKind::UnknownArgument);
-}
 
 #[test]
 fn issue_1093_allow_ext_sc() {

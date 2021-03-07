@@ -1118,34 +1118,6 @@ fn multiple_value_terminator_option_other_arg() {
 }
 
 #[test]
-fn multiple_vals_with_hyphen() {
-    let res = App::new("do")
-        .arg(
-            Arg::new("cmds")
-                .multiple(true)
-                .allow_hyphen_values(true)
-                .value_terminator(";"),
-        )
-        .arg(Arg::new("location"))
-        .try_get_matches_from(vec![
-            "do",
-            "find",
-            "-type",
-            "f",
-            "-name",
-            "special",
-            ";",
-            "/home/clap",
-        ]);
-    assert!(res.is_ok(), "{:?}", res.unwrap_err().kind);
-
-    let m = res.unwrap();
-    let cmds: Vec<_> = m.values_of("cmds").unwrap().collect();
-    assert_eq!(&cmds, &["find", "-type", "f", "-name", "special"]);
-    assert_eq!(m.value_of("location"), Some("/home/clap"));
-}
-
-#[test]
 fn issue_1480_max_values_consumes_extra_arg_1() {
     let res = App::new("prog")
         .arg(

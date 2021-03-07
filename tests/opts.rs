@@ -60,19 +60,6 @@ fn require_equals_min_values_zero() {
 }
 
 #[test]
-fn double_hyphen_as_value() {
-    let res = App::new("prog")
-        .arg(
-            Arg::new("cfg")
-                .setting(ArgSettings::AllowHyphenValues)
-                .long("config"),
-        )
-        .try_get_matches_from(vec!["prog", "--config", "--"]);
-    assert!(res.is_ok(), "{:?}", res);
-    assert_eq!(res.unwrap().value_of("cfg"), Some("--"));
-}
-
-#[test]
 fn require_equals_no_empty_values_fail() {
     let res = App::new("prog")
         .arg(
@@ -304,70 +291,6 @@ fn require_delims() {
     assert_eq!(m.values_of("o").unwrap().collect::<Vec<_>>(), &["1", "2"]);
     assert!(m.is_present("file"));
     assert_eq!(m.value_of("file").unwrap(), "some");
-}
-
-#[test]
-fn leading_hyphen_pass() {
-    let r = App::new("mvae")
-        .arg(Arg::from("-o [opt]... 'some opt'").setting(ArgSettings::AllowHyphenValues))
-        .try_get_matches_from(vec!["", "-o", "-2", "3"]);
-    assert!(r.is_ok());
-    let m = r.unwrap();
-    assert!(m.is_present("o"));
-    assert_eq!(m.values_of("o").unwrap().collect::<Vec<_>>(), &["-2", "3"]);
-}
-
-#[test]
-fn leading_hyphen_fail() {
-    let r = App::new("mvae")
-        .arg(Arg::from("-o [opt] 'some opt'"))
-        .try_get_matches_from(vec!["", "-o", "-2"]);
-    assert!(r.is_err());
-    let m = r.unwrap_err();
-    assert_eq!(m.kind, ErrorKind::UnknownArgument);
-}
-
-#[test]
-fn leading_hyphen_with_flag_after() {
-    let r = App::new("mvae")
-        .arg(Arg::from("-o [opt]... 'some opt'").setting(ArgSettings::AllowHyphenValues))
-        .arg("-f 'some flag'")
-        .try_get_matches_from(vec!["", "-o", "-2", "-f"]);
-    assert!(r.is_ok());
-    let m = r.unwrap();
-    assert!(m.is_present("o"));
-    assert_eq!(m.values_of("o").unwrap().collect::<Vec<_>>(), &["-2", "-f"]);
-    assert!(!m.is_present("f"));
-}
-
-#[test]
-fn leading_hyphen_with_flag_before() {
-    let r = App::new("mvae")
-        .arg(Arg::from("-o [opt]... 'some opt'").setting(ArgSettings::AllowHyphenValues))
-        .arg("-f 'some flag'")
-        .try_get_matches_from(vec!["", "-f", "-o", "-2"]);
-    assert!(r.is_ok());
-    let m = r.unwrap();
-    assert!(m.is_present("o"));
-    assert_eq!(m.values_of("o").unwrap().collect::<Vec<_>>(), &["-2"]);
-    assert!(m.is_present("f"));
-}
-
-#[test]
-fn leading_hyphen_with_only_pos_follows() {
-    let r = App::new("mvae")
-        .arg(
-            Arg::from("-o [opt]... 'some opt'")
-                .number_of_values(1)
-                .setting(ArgSettings::AllowHyphenValues),
-        )
-        .arg("[arg] 'some arg'")
-        .try_get_matches_from(vec!["", "-o", "-2", "--", "val"]);
-    assert!(r.is_ok(), "{:?}", r);
-    let m = r.unwrap();
-    assert!(m.is_present("o"));
-    assert_eq!(m.values_of("o").unwrap().collect::<Vec<_>>(), &["-2"]);
-    assert_eq!(m.value_of("arg"), Some("val"));
 }
 
 #[test]
